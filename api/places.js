@@ -23,37 +23,50 @@ export default async function handler(request, response) {
   }
 
   const query = `
-    [out:json][timeout:15];
+    [out:json][timeout:8];
     (
-      nwr(around:100000,${latitude},${longitude})["tourism"~"museum|attraction|gallery"];
-      nwr(around:100000,${latitude},${longitude})["historic"~"monument|museum|castle"];
+      nwr(around:20000,${latitude},${longitude})["tourism"~"museum|attraction|gallery"];
+      nwr(around:20000,${latitude},${longitude})["historic"~"monument|museum|castle"];
     );
     out center tags;
   `;
 
-  try {
-    const upstream = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({ data: query }),
-      signal: AbortSignal.timeout(18000),
-    });
+  const endpoints = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+  ];
+  const failures = [];
 
-    if (!upstream.ok) {
-      console.error("Overpass API returned status", upstream.status);
-      return response
-        .status(502)
-        .json({ error: "The places service is temporarily unavailable. Please try again." });
+  for (const endpoint of endpoints) {
+    try {
+      const upstream = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ data: query }),
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!upstream.ok) {
+        failures.push(`${new URL(endpoint).hostname}: HTTP ${upstream.status}`);
+        continue;
+      }
+
+      const data = await upstream.json();
+      return response.status(200).json({ elements: data.elements ?? [] });
+    } catch (error) {
+      failures.push(
+        `${new URL(endpoint).hostname}: ${
+          error instanceof Error ? error.message : "request failed"
+        }`
+      );
     }
-
-    const data = await upstream.json();
-    return response.status(200).json({ elements: data.elements ?? [] });
-  } catch (error) {
-    console.error("Nearby places request failed:", error);
-    return response
-      .status(502)
-      .json({ error: "Could not reach the places service. Please try again shortly." });
   }
+
+  console.error("All Overpass endpoints failed:", failures.join("; "));
+  return response
+    .status(502)
+    .json({ error: "The places service is temporarily unavailable. Please try again." });
 }

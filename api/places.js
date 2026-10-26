@@ -35,6 +35,8 @@ export default async function handler(request, response) {
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
     "https://overpass.private.coffee/api/interpreter",
+    "https://overpass.osm.ch/api/interpreter",
+    "https://overpass.nchc.org.tw/api/interpreter",
   ];
   const failures = [];
 
@@ -44,9 +46,11 @@ export default async function handler(request, response) {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "MuseBot/1.0 (nearby places lookup)",
+          Accept: "application/json",
         },
         body: new URLSearchParams({ data: query }),
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(3500),
       });
 
       if (!upstream.ok) {

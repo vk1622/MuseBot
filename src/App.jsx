@@ -340,74 +340,52 @@ function App() {
       const longitude = position.coords.longitude;
 
       try {
-        let uniquePlaces = [];
+        const response = await fetch(
+          `/api/places?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`
+        );
+        const data = await response.json();
 
-        for (const radius of [20000, 50000, 100000]) {
-          const query = `
-            [out:json][timeout:25];
-            (
-              nwr(around:${radius},${latitude},${longitude})["tourism"~"museum|attraction|gallery"];
-              nwr(around:${radius},${latitude},${longitude})["historic"~"monument|museum|castle"];
-            );
-            out center tags;
-          `;
-          const response = await fetch(
-            "https://overpass-api.de/api/interpreter",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: "data=" + encodeURIComponent(query),
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error("Unable to retrieve nearby places.");
-          }
-
-          const data = await response.json();
-          const places = data.elements
-            .filter((place) => place.tags && place.tags.name)
-            .map((place) => {
-              const placeLatitude = place.lat ?? place.center?.lat;
-              const placeLongitude = place.lon ?? place.center?.lon;
-              const image = getTaggedPlaceImage(place.tags);
-
-              return {
-                id: `${place.type}-${place.id}`,
-                name: place.tags.name,
-                category:
-                  place.tags.tourism ||
-                  place.tags.historic ||
-                  "Place of interest",
-                image,
-                imageLoading: !image,
-                latitude: placeLatitude,
-                longitude: placeLongitude,
-                distance: Math.hypot(
-                  (placeLatitude - latitude) *
-                    Math.PI / 180 *
-                    6371000,
-                  (placeLongitude - longitude) *
-                    Math.PI / 180 *
-                    6371000 *
-                    Math.cos(latitude * Math.PI / 180)
-                ),
-              };
-            })
-            .filter(
-              (place) =>
-                place.latitude != null &&
-                place.longitude != null
-            );
-
-          uniquePlaces = Array.from(
-            new Map(places.map((place) => [place.id, place])).values()
-          ).sort((first, second) => first.distance - second.distance);
-
-          if (uniquePlaces.length >= 5) break;
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to retrieve nearby places.");
         }
+
+        const places = data.elements
+          .filter((place) => place.tags && place.tags.name)
+          .map((place) => {
+            const placeLatitude = place.lat ?? place.center?.lat;
+            const placeLongitude = place.lon ?? place.center?.lon;
+            const image = getTaggedPlaceImage(place.tags);
+
+            return {
+              id: `${place.type}-${place.id}`,
+              name: place.tags.name,
+              category:
+                place.tags.tourism ||
+                place.tags.historic ||
+                "Place of interest",
+              image,
+              imageLoading: !image,
+              latitude: placeLatitude,
+              longitude: placeLongitude,
+              distance: Math.hypot(
+                (placeLatitude - latitude) *
+                  Math.PI / 180 *
+                  6371000,
+                (placeLongitude - longitude) *
+                  Math.PI / 180 *
+                  6371000 *
+                  Math.cos(latitude * Math.PI / 180)
+              ),
+            };
+          })
+          .filter(
+            (place) =>
+              place.latitude != null &&
+              place.longitude != null
+          );
+        const uniquePlaces = Array.from(
+          new Map(places.map((place) => [place.id, place])).values()
+        ).sort((first, second) => first.distance - second.distance);
 
         const placesToShow = uniquePlaces.slice(0, 12);
         setNearbyPlaces(placesToShow);
@@ -430,9 +408,11 @@ function App() {
             "No nearby museums or attractions were found. Try again later."
           );
         }
-      } catch {
+      } catch (error) {
         setPlacesError(
-          "Could not load nearby places. Please check your internet connection and try again."
+          error instanceof Error
+            ? error.message
+            : "Could not load nearby places. Please try again."
         );
       } finally {
         setPlacesLoading(false);

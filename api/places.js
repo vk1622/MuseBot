@@ -27,7 +27,10 @@ export default async function handler(request, response) {
     console.error("GEOAPIFY_API_KEY is not configured.");
     return response
       .status(500)
-      .json({ error: "Nearby places search is not configured yet." });
+      .json({
+        error:
+          "Geoapify API key is missing. Add GEOAPIFY_API_KEY in Vercel Settings > Environment Variables, then redeploy.",
+      });
   }
 
   const url = new URL("https://api.geoapify.com/v2/places");

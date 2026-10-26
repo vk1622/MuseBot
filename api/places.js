@@ -22,55 +22,76 @@ export default async function handler(request, response) {
     return response.status(400).json({ error: "Invalid location coordinates." });
   }
 
-  const query = `
-    [out:json][timeout:8];
-    (
-      nwr(around:20000,${latitude},${longitude})["tourism"~"museum|attraction|gallery"];
-      nwr(around:20000,${latitude},${longitude})["historic"~"monument|museum|castle"];
-    );
-    out center tags;
-  `;
-
-  const endpoints = [
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
-    "https://overpass.private.coffee/api/interpreter",
-    "https://overpass.osm.ch/api/interpreter",
-    "https://overpass.nchc.org.tw/api/interpreter",
-  ];
-  const failures = [];
-
-  for (const endpoint of endpoints) {
-    try {
-      const upstream = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "MuseBot/1.0 (nearby places lookup)",
-          Accept: "application/json",
-        },
-        body: new URLSearchParams({ data: query }),
-        signal: AbortSignal.timeout(3500),
-      });
-
-      if (!upstream.ok) {
-        failures.push(`${new URL(endpoint).hostname}: HTTP ${upstream.status}`);
-        continue;
-      }
-
-      const data = await upstream.json();
-      return response.status(200).json({ elements: data.elements ?? [] });
-    } catch (error) {
-      failures.push(
-        `${new URL(endpoint).hostname}: ${
-          error instanceof Error ? error.message : "request failed"
-        }`
-      );
-    }
+  const apiKey = process.env.GEOAPIFY_API_KEY;
+  if (!apiKey) {
+    console.error("GEOAPIFY_API_KEY is not configured.");
+    return response
+      .status(500)
+      .json({ error: "Nearby places search is not configured yet." });
   }
 
-  console.error("All Overpass endpoints failed:", failures.join("; "));
-  return response
-    .status(502)
-    .json({ error: "The places service is temporarily unavailable. Please try again." });
+  const url = new URL("https://api.geoapify.com/v2/places");
+  url.searchParams.set(
+    "categories",
+    "entertainment.museum,entertainment.culture.gallery,tourism.attraction,tourism.sights"
+  );
+  url.searchParams.set("filter", `circle:${longitude},${latitude},20000`);
+  url.searchParams.set("bias", `proximity:${longitude},${latitude}`);
+  url.searchParams.set("limit", "50");
+  url.searchParams.set("lang", "en");
+
+  try {
+    const upstream = await fetch(url, {
+      headers: {
+        "x-api-key": apiKey,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await upstream.json();
+
+    if (!upstream.ok) {
+      console.error("Geoapify Places API returned status", upstream.status);
+      if (upstream.status === 401 || upstream.status === 403) {
+        return response.status(502).json({
+          error: "The places API key is invalid or not enabled. Check GEOAPIFY_API_KEY in Vercel.",
+        });
+      }
+      if (upstream.status === 429) {
+        return response.status(502).json({
+          error: "The places search limit has been reached. Please try again later.",
+        });
+      }
+      return response.status(502).json({
+        error: "The places service is temporarily unavailable. Please try again.",
+      });
+    }
+
+    const elements = (data.features ?? []).map((feature) => {
+      const properties = feature.properties ?? {};
+      const categories = properties.categories ?? [];
+      const placeCategory =
+        categories.find((category) => category.startsWith("entertainment.")) ??
+        categories.find((category) => category.startsWith("tourism.")) ??
+        "Place of interest";
+
+      return {
+        id: properties.place_id,
+        type: "geoapify",
+        lat: properties.lat ?? feature.geometry?.coordinates?.[1],
+        lon: properties.lon ?? feature.geometry?.coordinates?.[0],
+        tags: {
+          name: properties.name,
+          tourism: placeCategory,
+        },
+      };
+    });
+
+    return response.status(200).json({ elements });
+  } catch (error) {
+    console.error("Geoapify Places API request failed:", error);
+    return response.status(502).json({
+      error: "Could not reach the places service. Please try again shortly.",
+    });
+  }
 }

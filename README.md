@@ -1,5 +1,13 @@
 # React + Vite
 
+## Nearby places API
+
+Nearby place searches use Geoapify Places API. Create a free API key at
+[Geoapify MyProjects](https://myprojects.geoapify.com/), then add it to the
+Vercel project's **Settings → Environment Variables** as `GEOAPIFY_API_KEY`.
+Redeploy the project after saving the variable. The key is used by the
+server-side API function and must not be added to frontend code.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

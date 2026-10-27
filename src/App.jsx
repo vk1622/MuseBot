@@ -6,30 +6,83 @@ import { jsPDF } from "jspdf";
 const exhibitions = [
   {
     number: "01",
-    category: "ANCIENT CIVILIZATION",
-    title: "Echoes of Egypt",
-    description: "Discover the mysteries, symbols and stories of an ancient world.",
+    category: "CHINA",
+    title: "Great Wall of China",
+    description:
+      "A vast network of fortifications built over centuries to protect China's northern frontier.",
     image:
-      "https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=900&q=85",
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Badaling_China_Great-Wall-of-China-01.jpg/960px-Badaling_China_Great-Wall-of-China-01.jpg",
     color: "gold",
   },
   {
     number: "02",
-    category: "ART & CULTURE",
-    title: "Beyond the Canvas",
-    description: "Explore extraordinary works that changed the way we see art.",
+    category: "JORDAN",
+    title: "Petra",
+    description:
+      "A Nabataean city carved into rose-colored cliffs, famed for the Treasury and ingenious water systems.",
     image:
-      "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?auto=format&fit=crop&w=900&q=85",
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/The_Treasury%2C_Petra%2C_Jordan1.jpg/960px-The_Treasury%2C_Petra%2C_Jordan1.jpg",
     color: "purple",
   },
   {
     number: "03",
-    category: "SCIENCE & DISCOVERY",
-    title: "Future Relics",
-    description: "Journey through human innovation, science and imagination.",
+    category: "BRAZIL",
+    title: "Christ the Redeemer",
+    description:
+      "The Art Deco statue overlooking Rio de Janeiro was completed in 1931 and has become a symbol of Brazil.",
     image:
-      "https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=900&q=85",
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Christ_the_Redeemer_-_Cristo_Redentor.jpg/960px-Christ_the_Redeemer_-_Cristo_Redentor.jpg",
     color: "blue",
+  },
+  {
+    number: "04",
+    category: "PERU",
+    title: "Machu Picchu",
+    description:
+      "A 15th-century Inca citadel high in the Andes, known for its precisely fitted stonework and mountain views.",
+    image:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Machu_Picchu%2C_Per%C3%BA%2C_2015-07-30%2C_DD_47.JPG/960px-Machu_Picchu%2C_Per%C3%BA%2C_2015-07-30%2C_DD_47.JPG",
+    color: "gold",
+  },
+  {
+    number: "05",
+    category: "MEXICO",
+    title: "Chichén Itzá",
+    description:
+      "A Maya city in the Yucatán, where the great pyramid El Castillo reflects remarkable architecture and astronomy.",
+    image:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Chichen_Itza_3.jpg/960px-Chichen_Itza_3.jpg",
+    color: "purple",
+  },
+  {
+    number: "06",
+    category: "ITALY",
+    title: "Colosseum",
+    description:
+      "Rome's 1st-century amphitheater hosted public spectacles and remains one of the largest ancient arenas.",
+    image:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d8/Colosseum_in_Rome-April_2007-1-_copie_2B.jpg/960px-Colosseum_in_Rome-April_2007-1-_copie_2B.jpg",
+    color: "blue",
+  },
+  {
+    number: "07",
+    category: "INDIA",
+    title: "Taj Mahal",
+    description:
+      "A white-marble mausoleum commissioned by Mughal emperor Shah Jahan in memory of Mumtaz Mahal.",
+    image:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/74/Taj_Mahal%2C_Agra%2C_India_edit2.jpg/960px-Taj_Mahal%2C_Agra%2C_India_edit2.jpg",
+    color: "gold",
+  },
+  {
+    number: "08",
+    category: "ANCIENT WONDER · EGYPT",
+    title: "Great Pyramid of Giza",
+    description:
+      "Built for Pharaoh Khufu around 2600 BCE, the Great Pyramid is the only surviving ancient wonder.",
+    image:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/Pyramid_of_Cheops_-_side.jpg/960px-Pyramid_of_Cheops_-_side.jpg",
+    color: "purple",
   },
 ];
 
@@ -41,7 +94,7 @@ const answers = {
   location:
     "MuseBot Museum is a fictional museum created for this project. Replace this with your chosen museum's address.",
   exhibitions:
-    "Our featured exhibitions are Echoes of Egypt, Beyond the Canvas, and Future Relics. Scroll down the page to explore them.",
+    "Explore eight world wonders: the Great Wall of China, Petra, Christ the Redeemer, Machu Picchu, Chichén Itzá, the Colosseum, the Taj Mahal, and the Great Pyramid of Giza. Scroll down to discover their stories.",
 };
 
 function getAnswer(message) {
@@ -1061,8 +1114,8 @@ button:disabled {
 
             <div className="hero-stats">
               <div>
-                <strong>03</strong>
-                <span>Featured exhibitions</span>
+                <strong>08</strong>
+                <span>World wonders</span>
               </div>
               <div className="stat-divider" />
               <div>
@@ -1128,17 +1181,21 @@ button:disabled {
                 Worlds worth <span>exploring.</span>
               </h2>
               <p>
-                Three windows into extraordinary worlds. Where will you begin?
+                Explore eight unforgettable landmarks, from ancient cities to enduring icons.
               </p>
             </div>
-            <span className="section-count">COLLECTION / 001—003</span>
+            <span className="section-count">WORLD WONDERS / 001—008</span>
           </div>
 
           <div className="exhibition-grid">
             {exhibitions.map((item) => (
               <article className="exhibition-card" key={item.number}>
                 <div className="exhibition-image">
-                  <img src={item.image} alt={item.title} loading="lazy" />
+                  <img
+                    src={item.image}
+                    alt={`${item.title}, ${item.category}`}
+                    loading="lazy"
+                  />
                   <span className={`image-number ${item.color}`}>
                     {item.number}
                   </span>

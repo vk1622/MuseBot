@@ -232,7 +232,9 @@ function App() {
     setMessages((previous) => [...previous, { sender: "bot", text }]);
   }
 
-  function startChatBooking() {
+  function startChatBooking(place = null) {
+    setSelectedPlace(place);
+    setChatOpen(true);
     setChatBooking({ date: "", adults: 1, children: 0 });
     setChatBookingError("");
     setConfirmedChatBooking(null);
@@ -240,10 +242,17 @@ function App() {
 
     setMessages((previous) => [
       ...previous,
-      { sender: "user", text: "I'd like to book museum tickets." },
+      {
+        sender: "user",
+        text: place
+          ? `I'd like to book tickets for ${place.name}.`
+          : "I'd like to book museum tickets.",
+      },
       {
         sender: "bot",
-        text: "Absolutely! Let's book your visit together. First, choose the date you'd like to visit.",
+        text: place
+          ? `Absolutely! Let's book your visit to ${place.name}. First, choose the date you'd like to visit.`
+          : "Absolutely! Let's book your visit together. First, choose the date you'd like to visit.",
       },
     ]);
   }
@@ -1209,6 +1218,12 @@ button:disabled {
                   <button className="text-link" onClick={openBooking}>
                     Plan your visit <span>→</span>
                   </button>
+                  <button
+                    className="text-link"
+                    onClick={() => startChatBooking({ name: item.title })}
+                  >
+                    Book through MuseBot <span>→</span>
+                  </button>
                 </div>
               </article>
             ))}
@@ -1545,6 +1560,11 @@ button:disabled {
               {bookingStep === "date" && (
                 <>
                   <div className="flow-step">STEP 1 OF 3 · VISIT DATE</div>
+                  {selectedPlace && (
+                    <p className="chat-flow-date">
+                      Booking for: <strong>{selectedPlace.name}</strong>
+                    </p>
+                  )}
                   <label htmlFor="chat-visit-date">
                     When would you like to visit?
                   </label>
@@ -1669,6 +1689,10 @@ button:disabled {
                   <div className="flow-step">STEP 3 OF 3 · REVIEW</div>
                   <h4>Confirm your visit</h4>
 
+                  <div className="chat-review-row">
+                    <span>Attraction</span>
+                    <strong>{selectedPlace?.name || "MuseBot Museum"}</strong>
+                  </div>
                   <div className="chat-review-row">
                     <span>Visit date</span>
                     <strong>{chatBooking.date}</strong>
